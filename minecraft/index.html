@@ -2,155 +2,209 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Minecraft Clone</title>
+    <title>WebCraft 2.5D (School Edition)</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #1a1a1a; font-family: sans-serif; }
-        canvas { display: block; width: 100%; height: 100%; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 20px; pointer-events: none; z-index: 10; }
-        #ui { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 5px; color: white; font-size: 14px; text-align: center; pointer-events: none; z-index: 10; }
-        .back-btn { position: absolute; top: 15px; left: 15px; background: #f44336; color: white; border: none; padding: 10px 15px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; z-index: 100; }
+        body { background-color: #1a1a1a; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; overflow: hidden; }
+        h1 { margin: 5px 0; color: #4CAF50; font-size: 24px; }
+        .back-btn { position: absolute; top: 15px; left: 15px; background: #f44336; color: white; border: none; padding: 8px 12px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        #game-container { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 15px; }
+        canvas { border: 4px solid #4CAF50; background-color: #87CEEB; display: block; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        #hotbar { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: left; width: 180px; }
+        .hotbar-item { padding: 8px; margin: 4px 0; border: 2px solid #444; border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .hotbar-item.active { border-color: #4CAF50; background: rgba(76, 175, 80, 0.2); }
+        .block-preview { width: 16px; height: 16px; display: inline-block; border-radius: 2px; }
     </style>
-    <script src="https://cloudflare.com"></script>
 </head>
 <body>
 
     <a href="../" class="back-btn">⬅ Back to Menu</a>
-    <div id="crosshair">+</div>
-    <div id="ui">
-        <b>Controls:</b> Click screen to lock mouse | WASD = Move | Space = Jump | Left Click = Break | Right Click = Place
+    <h1>WebCraft 2.5D</h1>
+    <p style="margin: 5px 0; font-size: 14px; color: #aaa;">WASD / Arrows = Move | Click = Break/Build | 1, 2, 3 = Select Block Type</p>
+
+    <div id="game-container">
+        <!-- The Game Viewport Screen -->
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+
+        <!-- Block Selection Hotbar -->
+        <div id="hotbar">
+            <h3 style="margin-top: 0; color: #4CAF50; font-size: 16px;">Material Inventory</h3>
+            <div id="item-grass" class="hotbar-item active" onclick="selectBlock('grass')">
+                <span class="block-preview" style="background: #557a2b;"></span> Grass (1)
+            </div>
+            <div id="item-dirt" class="hotbar-item" onclick="selectBlock('dirt')">
+                <span class="block-preview" style="background: #866043;"></span> Dirt (2)
+            </div>
+            <div id="item-stone" class="hotbar-item" onclick="selectBlock('stone')">
+                <span class="block-preview" style="background: #808080;"></span> Stone (3)
+            </div>
+        </div>
     </div>
 
     <script>
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x7ec0ee); 
-        scene.fog = new THREE.FogExp2(0x7ec0ee, 0.02);
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        // Game Configuration Layout
+        const tileSize = 32;
+        const gravity = 0.4;
+        let selectedMaterial = 'grass';
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight.position.set(10, 20, 15);
-        scene.add(directionalLight);
+        // Material Visual Colors Map
+        const colors = { grass: '#557a2b', dirt: '#866043', stone: '#808080', sky: '#87CEEB' };
 
-        const blockSize = 1;
-        const grid = {};
-        const blockGeo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-        
-        const materials = {
-            grass: new THREE.MeshLambertMaterial({ color: 0x557a2b }),
-            dirt: new THREE.MeshLambertMaterial({ color: 0x866043 }),
-            stone: new THREE.MeshLambertMaterial({ color: 0x808080 })
-        };
+        // Player Data Object
+        const player = { x: 100, y: 100, width: 20, height: 38, vx: 0, vy: 0, speed: 4, jumpForce: 9, grounded: false };
 
-        function addBlock(x, y, z, type) {
-            const mesh = new THREE.Mesh(blockGeo, materials[type]);
-            mesh.position.set(x, y, z);
-            scene.add(mesh);
-            grid[`${x},${y},${z}`] = mesh;
-        }
+        // Keyboard System Controls Tracking
+        const keys = {};
+        window.addEventListener('keydown', e => { 
+            keys[e.code] = true;
+            if (e.code === 'Digit1') selectBlock('grass');
+            if (e.code === 'Digit2') selectBlock('dirt');
+            if (e.code === 'Digit3') selectBlock('stone');
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
 
-        const worldSize = 20;
-        for (let x = -worldSize; x < worldSize; x++) {
-            for (let z = -worldSize; z < worldSize; z++) {
-                addBlock(x, 0, z, 'grass');
-                addBlock(x, -1, z, 'dirt');
-                addBlock(x, -2, z, 'stone');
+        // Generate Terrain World Map Matrix
+        const world = {};
+        const totalRows = Math.ceil(canvas.height / tileSize);
+        const totalCols = Math.ceil(canvas.width / tileSize);
+
+        // Fill background map floor structures dynamically
+        for (let col = 0; col < totalCols; col++) {
+            let groundHeight = 9; // Grid row elevation point index placement
+            for (let row = 0; row < totalRows; row++) {
+                if (row === groundHeight) world[`${col},${row}`] = 'grass';
+                else if (row > groundHeight && row < groundHeight + 3) world[`${col},${row}`] = 'dirt';
+                else if (row >= groundHeight + 3) world[`${col},${row}`] = 'stone';
             }
         }
 
-        camera.position.set(0, 2, 5);
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveUp = false;
-        const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
+        // Selection inventory UI component engine mapping updates
+        function selectBlock(type) {
+            selectedMaterial = type;
+            document.querySelectorAll('.hotbar-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(`item-${type}`).classList.add('active');
+        }
 
-        document.body.addEventListener('click', (e) => {
-            if(e.target.className !== 'back-btn') {
-                document.body.requestPointerLock();
-            }
-        });
+        // Mouse click triggers break block / build block action framework
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
 
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body) {
-                camera.rotation.y -= e.movementX * 0.0025;
-                camera.rotation.x -= e.movementY * 0.0025;
-                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-            }
-        });
+            const targetCol = Math.floor(clickX / tileSize);
+            const targetRow = Math.floor(clickY / tileSize);
+            const key = `${targetCol},${targetRow}`;
 
-        document.addEventListener('keydown', (e) => {
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = true;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = true;
-            if(e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = true;
-            if(e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = true;
-            if(e.code === 'Space') moveUp = true;
-        });
-        document.addEventListener('keyup', (e) => {
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = false;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = false;
-            if(e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = false;
-            if(e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = false;
-            if(e.code === 'Space') moveUp = false;
-        });
+            if (e.button === 0) { // Left Click: Check grid block to break or construct
+                if (world[key]) {
+                    delete world[key]; // Destroy target coordinate element
+                } else {
+                    // Prevent replacing active player model collision grid spaces
+                    const pLeft = Math.floor(player.x / tileSize);
+                    const pRight = Math.floor((player.x + player.width) / tileSize);
+                    const pTop = Math.floor(player.y / tileSize);
+                    const pBottom = Math.floor((player.y + player.height) / tileSize);
 
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2(0, 0);
-
-        document.addEventListener('mousedown', (e) => {
-            if (document.pointerLockElement !== document.body) return;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                if (e.button === 0) { 
-                    if (intersect.object !== ambientLight && intersect.object !== directionalLight) {
-                        scene.remove(intersect.object);
+                    if (!(targetCol >= pLeft && targetCol <= pRight && targetRow >= pTop && targetRow <= pBottom)) {
+                        world[key] = selectedMaterial; // Place block structure
                     }
-                } 
-                else if (e.button === 2) { 
-                    const normal = intersect.face.normal;
-                    const p = intersect.object.position;
-                    addBlock(Math.round(p.x + normal.x), Math.round(p.y + normal.y), Math.round(p.z + normal.z), 'dirt');
                 }
             }
         });
-        document.addEventListener('contextmenu', e => e.preventDefault());
+        canvas.addEventListener('contextmenu', e => e.preventDefault()); // Prevent right click window menu crash popup trigger
 
-        const clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate);
-            if (document.pointerLockElement === document.body) {
-                const delta = clock.getDelta();
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= velocity.y * 10.0 * delta;
+        // Physical Engine Processing Loop Tick Updates
+        function update() {
+            // Movement physics processing
+            if (keys['KeyA'] || keys['ArrowLeft']) player.vx = -player.speed;
+            else if (keys['KeyD'] || keys['ArrowRight']) player.vx = player.speed;
+            else player.vx = 0;
 
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.y = Number(moveUp) - Number(false);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * 40.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
-                if (moveUp) velocity.y += direction.y * 40.0 * delta;
-
-                camera.translateX(-velocity.x * delta);
-                camera.translateZ(velocity.z * delta);
-                camera.position.y += velocity.y * delta;
-                if(camera.position.y < 1.5) camera.position.y = 1.5;
+            if ((keys['KeyW'] || keys['Space'] || keys['ArrowUp']) && player.grounded) {
+                player.vy = -player.jumpForce;
+                player.grounded = false;
             }
-            renderer.render(scene, camera);
-        }
-        animate();
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+            // Gravity cycle velocity additions
+            player.vy += gravity;
+
+            // X Axis movement verification checks and boundary limits processing
+            player.x += player.vx;
+            checkCollisions('x');
+
+            // Y Axis movement handling loops and falling constraint systems verification check
+            player.y += player.vy;
+            player.grounded = false;
+            checkCollisions('y');
+
+            // Screen boundary clamping constraints maps
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.vy = 0;
+                player.grounded = true;
+            }
+        }
+
+        // Basic Tile Environment Map Layer Collision Handling
+        function checkCollisions(dir) {
+            const startCol = Math.floor(player.x / tileSize);
+            const endCol = Math.floor((player.x + player.width) / tileSize);
+            const startRow = Math.floor(player.y / tileSize);
+            const endRow = Math.floor((player.y + player.height) / tileSize);
+
+            for (let col = startCol; col <= endCol; col++) {
+                for (let row = startRow; row <= endRow; row++) {
+                    if (world[`${col},${row}`]) { // Block detected at active check node bounds
+                        if (dir === 'x') {
+                            if (player.vx > 0) player.x = col * tileSize - player.width;
+                            if (player.vx < 0) player.x = (col + 1) * tileSize;
+                        }
+                        if (dir === 'y') {
+                            if (player.vy > 0) {
+                                player.y = row * tileSize - player.height;
+                                player.vy = 0;
+                                player.grounded = true;
+                            }
+                            if (player.vy < 0) {
+                                player.y = (row + 1) * tileSize;
+                                player.vy = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Draw Frame Cycle Engine Render Tasks
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Render existing world layer values dynamically
+            for (let key in world) {
+                const [col, row] = key.split(',').map(Number);
+                ctx.fillStyle = colors[world[key]];
+                ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+                // Grid outline style strokes for individual unit elements
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.strokeRect(col * tileSize, row * tileSize, tileSize, tileSize);
+            }
+
+            // Draw Character Entity Layer
+            ctx.fillStyle = '#1E90FF'; // Blue player color profile representation
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
     </script>
 </body>
 </html>
