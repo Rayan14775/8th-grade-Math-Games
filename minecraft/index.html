@@ -172,6 +172,20 @@
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+            <div class="menu-container">
+    <!-- Snake Game Button -->
+    <a href="snake/" class="game-card">
+        <span class="game-icon">🐍</span>
+        <span class="game-title">Classic Snake</span>
+    </a>
+
+    <!-- Minecraft Game Button -->
+    <a href="minecraft/" class="game-card">
+        <span class="game-icon">⛏️</span>
+        <span class="game-title">WebCraft 3D</span>
+    </a>
+</div>
+
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
