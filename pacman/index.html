@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retro Pac-Man (School Edition)</title>
+    <style>
+        body { background-color: #111; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
+        h1 { color: #FFD700; margin: 5px 0; }
+        .back-btn { position: absolute; top: 15px; left: 15px; background: #f44336; color: white; border: none; padding: 8px 12px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        canvas { border: 4px solid #0000FF; background-color: #000; display: block; margin: 20px auto; box-shadow: 0 0 15px rgba(0, 0, 255, 0.4); }
+        #score-board { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #FFD700; }
+    </style>
+</head>
+<body>
+
+    <a href="../" class="back-btn">⬅ Back to Menu</a>
+    <h1>Pac-Man Retro</h1>
+    <div id="score-board">Score: <span id="score">0</span></div>
+    <p style="color: #aaa; margin: 5px 0; font-size: 14px;">Use Arrow Keys to Move and Eat the Yellow Dots!</p>
+    
+    <canvas id="gameCanvas" width="380" height="380"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const tileSize = 20;
+        let score = 0;
+
+        // 1 = Wall, 0 = Dot, 2 = Empty Space
+        const map = [,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+ ,
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        const pacman = { x: 9, y: 16, dx: 0, dy: 0, nextDx: 0, nextDy: 0, angle: 0 };
+        const ghost = { x: 9, y: 8, dx: 1, dy: 0, color: "#FF0000" };
+
+        window.addEventListener("keydown", e => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") { pacman.nextDx = -1; pacman.nextDy = 0; }
+            if (e.code === "ArrowRight" || e.code === "KeyD") { pacman.nextDx = 1; pacman.nextDy = 0; }
+            if (e.code === "ArrowUp" || e.code === "KeyW") { pacman.nextDx = 0; pacman.nextDy = -1; }
+            if (e.code === "ArrowDown" || e.code === "KeyS") { pacman.nextDx = 0; pacman.nextDy = 1; }
+        });
+
+        function checkWall(x, y) {
+            if (x < 0 || x >= map[0].length || y < 0 || y >= map.length) return true;
+            return map[y][x] === 1;
+        }
+
+        let frameCount = 0;
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+            if (++frameCount < 12) return; // Limits speed
+            frameCount = 0;
+
+            // Apply next turning direction if clear of walls
+            if (!checkWall(pacman.x + pacman.nextDx, pacman.y + pacman.nextDy)) {
+                pacman.dx = pacman.nextDx;
+                pacman.dy = pacman.nextDy;
+            }
+
+            // Move Pacman
+            if (!checkWall(pacman.x + pacman.dx, pacman.y + pacman.dy)) {
+                pacman.x += pacman.dx;
+                pacman.y += pacman.dy;
+            }
+
+            // Eat dots
+            if (map[pacman.y][pacman.x] === 0) {
+                map[pacman.y][pacman.x] = 2;
+                score += 10;
+                document.getElementById("score").innerText = score;
+            }
+
+            // Artificial Ghost Logic (Basic Random Turns at Intersections)
+            let possibleMoves = [];
+            const directions = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
+            directions.forEach(d => {
+                if (!checkWall(ghost.x + d.x, ghost.y + d.y) && !(d.x === -ghost.dx && d.y === -ghost.dy)) {
+                    possibleMoves.push(d);
+                }
+            });
+            if (possibleMoves.length > 0 && (Math.random() < 0.3 || checkWall(ghost.x + ghost.dx, ghost.y + ghost.dy))) {
+                let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                ghost.dx = move.x;
+                ghost.dy = move.y;
+            }
+            ghost.x += ghost.dx;
+            ghost.y += ghost.dy;
+
+            // Defeat condition checks
+            if (pacman.x === ghost.x && pacman.y === ghost.y) {
+                alert("Game Over! Final Score: " + score);
+                score = 0;
+                document.getElementById("score").innerText = score;
+                pacman.x = 9; pacman.y = 16; pacman.dx = 0; pacman.dy = 0;
+                ghost.x = 9; ghost.y = 8;
+                // Re-populate maps dots
+                for(let r=0; r<map.length; r++) {
+                    for(let c=0; c<map[r].length; c++) {
+                        if(map[r][c] === 2 && r !== 16) map[r][c] = 0;
+                    }
+                }
+            }
+
+            // Render Framework Screen Task
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < map.length; r++) {
+                for (let c = 0; c < map[r].length; c++) {
+                    if (map[r][c] === 1) {
+                        ctx.fillStyle = "#0000FF";
+                        ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                    } else if (map[r][c] === 0) {
+                        ctx.fillStyle = "#FFD700";
+                        ctx.beginPath();
+                        ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // Render Player Model
+            ctx.fillStyle = "#FFFF00";
+            ctx.beginPath();
+            ctx.arc(pacman.x * tileSize + tileSize/2, pacman.y * tileSize + tileSize/2, tileSize/2 - 1, 0.2 * Math.PI, 1.8 * Math.PI);
+            ctx.lineTo(pacman.x * tileSize + tileSize/2, pacman.y * tileSize + tileSize/2);
+            ctx.fill();
+
+            // Render Enemy Phantom Entity
+            ctx.fillStyle = ghost.color;
+            ctx.beginPath();
+            ctx.arc(ghost.x * tileSize + tileSize/2, ghost.y * tileSize + tileSize/2, tileSize/2 - 1, Math.PI, 0, false);
+            ctx.lineTo(ghost.x * tileSize + tileSize, ghost.y * tileSize + tileSize);
+            ctx.lineTo(ghost.x * tileSize, ghost.y * tileSize + tileSize);
+            ctx.fill();
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
