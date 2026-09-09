@@ -186,14 +186,15 @@
         return false;
     }
 
+    // Fixed complete number grids for the blocks
     function createPiece(type) {
-        if (type === 'T') return [,,];
-        if (type === 'I') return [,,,];
-        if (type === 'S') return [,,];
-        if (type === 'Z') return [,,];
-        if (type === 'L') return [,,];
-        if (type === 'O') return [,];
-        if (type === 'J') return [,,];
+        if (type === 'T') return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
+        if (type === 'I') return [[0, 2, 0, 0], [0, 2, 0, 0], [0, 2, 0, 0], [0, 2, 0, 0]];
+        if (type === 'S') return [[0, 3, 3], [3, 3, 0], [0, 0, 0]];
+        if (type === 'Z') return [[4, 4, 0], [0, 4, 4], [0, 0, 0]];
+        if (type === 'L') return [[0, 5, 0], [0, 5, 0], [0, 5, 5]];
+        if (type === 'O') return [[6, 6], [6, 6]];
+        if (type === 'J') return [[0, 7, 0], [0, 7, 0], [7, 7, 0]];
     }
 
     function draw() {
@@ -239,7 +240,7 @@
         const randomPiece = pieces[Math.floor(Math.random() * pieces.length)];
         player.matrix = createPiece(randomPiece);
         player.pos.y = 0;
-        player.pos.x = Math.floor(arena.length / 2) - Math.floor(player.matrix.length / 2);
+        player.pos.x = Math.floor(arena[0].length / 2) - Math.floor(player.matrix[0].length / 2);
         
         if (collide(arena, player)) {
             isGameOver = true;
@@ -267,7 +268,7 @@
         while (collide(arena, player)) {
             player.pos.x += offset;
             offset = -(offset + (offset > 0 ? 1 : -1));
-            if (offset > player.matrix.length) {
+            if (offset > player.matrix[0].length) {
                 rotate(player.matrix, -dir); player.pos.x = pos; return;
             }
         }
