@@ -35,7 +35,7 @@
             flex-direction: column;
             justify-content: space-between;
             height: 400px;
-            min-widh: 120px;
+            min-width: 120px;
         }
         .info-box {
             background: #333;
@@ -54,7 +54,7 @@
             margin: 0;
             font-size: 24px;
             font-weight: bold;
-            color: #00ffcc;
+            color: #4CAF50;
         }
         #controls {
             font-size: 11px;
@@ -91,12 +91,11 @@
 <script>
     const canvas = document.getElementById('tetris');
     const context = canvas.getContext('2d');
-    context.scale(20, 20); // Scale blocks to 20x20 pixels
+    context.scale(20, 20);
 
     let score = 0;
     let linesCleared = 0;
 
-    // 10x20 Grid
     const arena = createMatrix(12, 20);
 
     const colors = [
@@ -125,7 +124,7 @@
                     continue outer;
                 }
             }
-            const row = arena.splice(y, 1)[0].fill(0);
+            const row = arena.splice(y, 1).fill(0);
             arena.unshift(row);
             ++y;
 
@@ -159,28 +158,14 @@
     }
 
     function createPiece(type) {
-        if (type === 'I') {
-            return [,
- ,
- ,
- ,
-            ];
-        } else if (type === 'L') {
+        if (type === 'T') {
             return [,
  ,
  ,
             ];
-        } else if (type === 'J') {
+        } else if (type === 'I') {
             return [,
  ,
- ,
-            ];
-        } else if (type === 'O') {
-            return [,
- ,
-            ];
-        } else if (type === 'Z') {
-            return [,
  ,
  ,
             ];
@@ -189,7 +174,21 @@
  ,
  ,
             ];
-        } else if (type === 'T') {
+        } else if (type === 'Z') {
+            return [,
+ ,
+ ,
+            ];
+        } else if (type === 'L') {
+            return [,
+ ,
+ ,
+            ];
+        } else if (type === 'O') {
+            return [,
+ ,
+            ];
+        } else if (type === 'J') {
             return [,
  ,
  ,
@@ -293,7 +292,7 @@
     }
 
     let dropCounter = 0;
-    let dropInterval = 1000; // 1 second
+    let dropInterval = 1000;
 
     let lastTime = 0;
     function update(time = 0) {
@@ -323,7 +322,7 @@
             playerDrop();
         } else if (event.keyCode === 38) {
             playerRotate(1);
-        } else if (event.keyCode === 32) { // Spacebar Hard Drop
+        } else if (event.keyCode === 32) {
             while(!collide(arena, player)) {
                 player.pos.y++;
             }
@@ -331,6 +330,7 @@
             merge(arena, player);
             playerReset();
             arenaSweep();
+            event.preventDefault(); // Prevents page from scrolling down
         }
     });
 
