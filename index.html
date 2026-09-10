@@ -3,58 +3,107 @@
 <head> 
 <title>My 8th grade Math Games</title> 
 <style> 
- body { 
-  background-color: #1a1a1a; 
-  color: #fff; 
-  font-family: sans-serif; 
-  text-align: center; 
-  padding: 50px; 
- } 
- h1 { 
-  color: #4CAF50; 
-  font-size: 3rem; 
-  margin-bottom: 10px; 
- } 
- .subtitle { 
-  color: #888; 
-  font-size: 1.2rem; 
-  margin-bottom: 40px; 
- } 
- .menu-container { 
-  display: flex; 
-  justify-content: center; 
-  gap: 20px; 
-  flex-wrap: wrap; 
- } 
- .game-card { 
-  background-color: #2a2a2a; 
-  border: 2px solid #444; 
-  border-radius: 10px; 
-  padding: 20px; 
-  width: 200px; 
-  text-align: center; 
-  text-decoration: none; 
-  color: #fff; 
-  transition: 0.2s; 
-  display: block; 
- } 
- .game-card:hover { 
-  transform: translateY(-5px); 
-  border-color: #4CAF50; 
-  background-color: #333; 
- } 
- .game-icon { 
-  font-size: 3rem; 
-  margin-bottom: 10px; 
-  display: block; 
- } 
- .game-title { 
-  font-weight: bold; 
-  font-size: 1.3rem; 
- } 
+body { 
+ background-color: #1a1a1a; 
+ color: #fff; 
+ font-family: sans-serif; 
+ text-align: center; 
+ padding: 50px; 
+} 
+h1 { 
+ color: #4CAF50; 
+ font-size: 3rem; 
+ margin-bottom: 10px; 
+} 
+.subtitle { 
+ color: #888; 
+ font-size: 1.2rem; 
+ margin-bottom: 40px; 
+} 
+.menu-container { 
+ display: flex; 
+ justify-content: center; 
+ gap: 20px; 
+ flex-wrap: wrap; 
+ margin-bottom: 60px; /* Gives space before the suggestion box */
+} 
+.game-card { 
+ background-color: #2a2a2a; 
+ border: 2px solid #444; 
+ border-radius: 10px; 
+ padding: 20px; 
+ width: 200px; 
+ text-align: center; 
+ text-decoration: none; 
+ color: #fff; 
+ transition: 0.2s; 
+ display: block; 
+} 
+.game-card:hover { 
+ transform: translateY(-5px); 
+ border-color: #4CAF50; 
+ background-color: #333; 
+} 
+.game-icon { 
+ font-size: 3rem; 
+ margin-bottom: 10px; 
+ display: block; 
+} 
+.game-title { 
+ font-weight: bold; 
+ font-size: 1.3rem; 
+} 
+
+/* Separate Suggestion Box Design at the Bottom */
+.suggestion-box {
+ background-color: #222;
+ border: 2px dashed #4CAF50;
+ border-radius: 12px;
+ padding: 25px;
+ max-width: 500px;
+ margin: 40px auto 0 auto;
+ box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+.suggestion-box h3 {
+ margin-top: 0;
+ color: #4CAF50;
+ font-size: 1.5rem;
+}
+.suggestion-form {
+ display: flex;
+ gap: 10px;
+ justify-content: center;
+}
+.suggestion-input {
+ background-color: #333;
+ border: 1px solid #444;
+ color: #fff;
+ padding: 10px 15px;
+ border-radius: 6px;
+ flex-grow: 1;
+ font-size: 1rem;
+}
+.suggestion-input:focus {
+ outline: none;
+ border-color: #4CAF50;
+}
+.suggestion-submit {
+ background-color: #4CAF50;
+ color: white;
+ border: none;
+ padding: 10px 20px;
+ border-radius: 6px;
+ font-weight: bold;
+ cursor: pointer;
+ transition: 0.2s;
+}
+.suggestion-submit:hover {
+ background-color: #45a049;
+ transform: scale(1.05);
+}
 </style> 
 </head> 
-<body> 
+<body>
 
  <h1>🎮 Unblocked Arcade</h1> 
  <p class="subtitle">Welcome to Rayan's public game hub. Select a game below to play instantly!</p> 
